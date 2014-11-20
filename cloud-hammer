@@ -1,0 +1,104 @@
+#!/bin/bash
+
+set -e
+
+function usage {
+    echo "Usage:  $0 create | update <stack-name> <cloud-formation-template.json> <cloud-formation-template.properties>"
+    exit -1
+}
+
+function param_validate {
+    CF_JSON=${CF:-$(cat $CF_FILE)}
+    #validate or die if the parameter does not exist in the cloudformation
+    set +e
+    (echo $CF_JSON | jq -e ".Parameters.$key" > /dev/null ) 
+    if [ $? -ne 0 ]; then
+        echo param not in CF [$key] && exit 1
+    fi
+    set -e
+}
+
+function aws_get_json {
+    set +e
+    AWS_CF_JSON=`aws cloudformation get-template --stack-name $STACK_NAME 2>&1`
+    if ( echo $AWS_CF_JSON | grep "does not exist" &> /dev/null ); then
+        #stack does not exist error
+        echo stack $STACK_NAME does not exist
+        AWS_CF_JSON=""
+    fi
+    set -e
+}
+
+function aws_create_stack {
+    echo "[*] creating stack $STACK_NAME ...."
+    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE --parameters $LONG_PARAMS
+}
+function aws_update_stack {
+    echo "[*] calculating update - diff"
+
+    #format / indent json files
+    f1=/tmp/json-$$-local.json
+    echo $CF_JSON     | jq --sort-keys  . > $f1
+    f2=/tmp/json-$$-remote.json
+    echo $AWS_CF_JSON | jq --sort-keys  ".TemplateBody" > $f2
+
+    (set +x ; diff $f1 $f2 && echo "no changes, this will not be executed anyway by 'aws cli'")
+    
+    rm -fr /tmp/json-$$-*
+
+    echo
+    read -p "Are you sure to apply the changes? " -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+    echo "[*] updating stack $STACK_NAME ...."
+    
+    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE --parameters $LONG_PARAMS
+}
+
+[ "$#" -lt 2 ] && usage
+
+STACK_NAME=$1
+CF_FILE=$2
+CF_PARAMS=$3
+
+[ -z "$3" ] && CF_PARAMS="${CF_FILE%.*}.properties"
+
+
+echo hammer understood this: $STACK_NAME $CF_FILE $CF_PARAMS
+
+
+while read line; do
+    #trim
+    line=${line##+([[:space:]])}; x=${line%%+([[:space:]])} 
+    #continue if empty
+    [ -z "$line" ] && continue
+
+    key=`echo $line|cut -d '=' -f1`
+    val=`echo $line|cut -d '=' -f2`
+
+    echo "    check param: $key => $val"
+    param_validate $key
+    LONG_PARAMS="$LONG_PARAMS ParameterKey=$key,ParameterValue=$val"
+    
+done < $CF_PARAMS
+
+aws_get_json
+
+[ -z "$AWS_CF_JSON" ] && AWS_ACTION="create-stack"
+[ ! -z "$AWS_CF_JSON" ] && AWS_ACTION="update-stack"
+
+
+case $AWS_ACTION in
+    update-stack)
+        aws_update_stack
+        ;;
+    create-stack)
+        aws_create_stack 
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac
