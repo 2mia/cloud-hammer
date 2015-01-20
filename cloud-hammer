@@ -42,7 +42,10 @@ function aws_update_stack {
     f2=/tmp/json-$$-remote.json
     echo $AWS_CF_JSON | jq --sort-keys  ".TemplateBody" > $f2
 
-    (set +x ; diff $f1 $f2 && echo "no changes, this will not be executed anyway by 'aws cli'")
+    (set +e ; 
+        diff $f1 $f2 && echo "no changes, this will not be executed anyway by 'aws cli'";
+        true;
+    )
     
     rm -fr /tmp/json-$$-*
 
