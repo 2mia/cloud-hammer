@@ -3,7 +3,11 @@
 set -e
 
 function usage {
-    echo "Usage:  $0 create | update <stack-name> <cloud-formation-template.json> <cloud-formation-template.properties>"
+    echo "Usage:  $0 <stack-name> <cloud-formation-template.json> <cloud-formation-template.properties>"
+    echo ""
+    echo "      Creates or updates a cloudformation stack"
+    echo "      - stack gets created if it does not exist"
+    echo "      - stack gets updated otherwise. A diff message will be prompted showing the changes that will be applied"
     exit -1
 }
 
@@ -46,7 +50,7 @@ function aws_update_stack {
         diff $f1 $f2 && echo "no changes, this will not be executed anyway by 'aws cli'";
         true;
     )
-    
+
     rm -fr /tmp/json-$$-*
 
     echo
@@ -56,8 +60,8 @@ function aws_update_stack {
         exit 1
     fi
     echo "[*] updating stack $STACK_NAME ...."
-    
-    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE --parameters $LONG_PARAMS
+    [ -z "$LONG_PARAMS" ] || PARAMS="--parameters $LONG_PARAMS"
+    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE $PARAMS
 }
 
 [ "$#" -lt 2 ] && usage
@@ -71,7 +75,7 @@ CF_PARAMS=$3
 
 echo hammer understood this: $STACK_NAME $CF_FILE $CF_PARAMS
 
-
+CF_JSON=${CF:-$(cat $CF_FILE)}
 while read line; do
     #trim
     line=${line##+([[:space:]])}; x=${line%%+([[:space:]])} 
