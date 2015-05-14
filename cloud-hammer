@@ -35,7 +35,8 @@ function aws_get_json {
 
 function aws_create_stack {
     echo "[*] creating stack $STACK_NAME ...."
-    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE --parameters $LONG_PARAMS
+     [ -z "$LONG_PARAMS" ] || PARAMS="--parameters $LONG_PARAMS"
+    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE $PARAMS
 }
 function aws_update_stack {
     echo "[*] calculating update - diff"
