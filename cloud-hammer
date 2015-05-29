@@ -17,7 +17,7 @@ function param_validate {
     set +e
     (echo $CF_JSON | jq -e ".Parameters.$key" > /dev/null ) 
     if [ $? -ne 0 ]; then
-        echo param not in CF [$key] && exit 1
+        echo "param not in CF [$key]" && exit 1
     fi
     set -e
 }
@@ -48,7 +48,7 @@ function aws_update_stack {
     echo $AWS_CF_JSON | jq --sort-keys  ".TemplateBody" > $f2
 
     (set +e ; 
-        diff $f1 $f2 && echo "no changes, this will not be executed anyway by 'aws cli'";
+        diff $f2 $f1 && echo "no changes, this will not be executed anyway by 'aws cli'";
         true;
     )
 
@@ -88,7 +88,7 @@ while read line; do
 
     echo "    check param: $key => $val"
     param_validate $key
-    LONG_PARAMS="$LONG_PARAMS ParameterKey=$key,ParameterValue=$val"
+    LONG_PARAMS="$LONG_PARAMS ParameterKey=$key,ParameterValue=\\'$val\\'"
     
 done < $CF_PARAMS
 
