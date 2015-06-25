@@ -65,6 +65,31 @@ function aws_update_stack {
     aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE $PARAMS
 }
 
+function load_params_properties {
+    while read line; do
+        #trim
+        line=${line##+([[:space:]])}; x=${line%%+([[:space:]])} 
+        #continue if empty
+        [ -z "$line" ] && continue
+
+        key=`echo $line|cut -d '=' -f1`
+        val=`echo $line|cut -d '=' -f2`
+
+        echo "    check param: $key => $val"
+        param_validate $key
+        LONG_PARAMS="$LONG_PARAMS ParameterKey=$key,ParameterValue=\\'$val\\'"
+        
+    done < $CF_PARAMS
+}
+
+function load_params_json {
+    CF_PARAMS_TEMP=/tmp/ch-params-$$.properties
+    cat $CF_PARAMS | jq '.[] |[.ParameterKey, .ParameterValue] | join("=")' -r >> $CF_PARAMS_TEMP
+    export CF_PARAMS=$CF_PARAMS_TEMP
+    load_params_properties
+    rm $CF_PARAMS_TEMP
+}
+
 [ "$#" -lt 2 ] && usage
 
 STACK_NAME=$1
@@ -77,20 +102,9 @@ CF_PARAMS=$3
 echo hammer understood this: $STACK_NAME $CF_FILE $CF_PARAMS
 
 CF_JSON=${CF:-$(cat $CF_FILE)}
-while read line; do
-    #trim
-    line=${line##+([[:space:]])}; x=${line%%+([[:space:]])} 
-    #continue if empty
-    [ -z "$line" ] && continue
 
-    key=`echo $line|cut -d '=' -f1`
-    val=`echo $line|cut -d '=' -f2`
-
-    echo "    check param: $key => $val"
-    param_validate $key
-    LONG_PARAMS="$LONG_PARAMS ParameterKey=$key,ParameterValue=\\'$val\\'"
-    
-done < $CF_PARAMS
+(echo $CF_PARAMS | grep "properties$") && load_params_properties 
+(echo $CF_PARAMS | grep "json$") && load_params_json
 
 aws_get_json
 
