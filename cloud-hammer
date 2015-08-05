@@ -2,12 +2,27 @@
 
 set -e
 
+while getopts ":f" opt; do
+  case $opt in
+    f)
+      echo "WARN: force mode enabled" >&2
+      shift $(( ${OPTIND} - 1 ))
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
+
 function usage {
     echo "Usage:  $0 <stack-name> <cloud-formation-template.json> <cloud-formation-template.properties>"
     echo ""
     echo "      Creates or updates a cloudformation stack"
     echo "      - stack gets created if it does not exist"
     echo "      - stack gets updated otherwise. A diff message will be prompted showing the changes that will be applied"
+    echo "Parameters:"
+    echo "      -f      forced mode enabled; will bypass user prompts and assume [Y] as answers"
     exit -1
 }
 
