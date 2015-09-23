@@ -16,7 +16,7 @@ while getopts ":f" opt; do
 done
 
 function usage {
-    echo "Usage:  $0 <stack-name> <cloud-formation-template.json> <cloud-formation-template.properties>"
+    echo "Usage:  $0 <stack-name> <cloud-formation-template.json> <cloud-formation-template.properties|json>"
     echo ""
     echo "      Creates or updates a cloudformation stack"
     echo "      - stack gets created if it does not exist"
