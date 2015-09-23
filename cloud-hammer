@@ -116,6 +116,10 @@ CF_PARAMS=$3
 
 echo hammer understood this: $STACK_NAME $CF_FILE $CF_PARAMS
 
+# validate json
+echo -n "validation json" && cat $CF_FILE | jq . > /dev/null && echo "   [ok]"
+
+# load cloadformation as json text
 CF_JSON=${CF:-$(cat $CF_FILE)}
 
 (echo $CF_PARAMS | grep "properties$") && load_params_properties 
