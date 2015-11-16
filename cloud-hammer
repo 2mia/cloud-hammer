@@ -92,7 +92,8 @@ function load_params_properties {
 
         echo "    check param: $key => $val"
         param_validate $key
-        LONG_PARAMS="$LONG_PARAMS ParameterKey=$key,ParameterValue=\\'$val\\'"
+        LONG_PARAMS="$LONG_PARAMS ParameterKey=$key,ParameterValue=\"$val\""
+        #echo "=> $LONG_PARAMS"
         
     done < $CF_PARAMS
 }
