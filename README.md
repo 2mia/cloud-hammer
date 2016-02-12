@@ -5,11 +5,11 @@
 
 #### Install it
 
-    sudo bash -c "curl https://raw.githubusercontent.com/2mia/cloud-hammer/master/cloud-hammer > /usr/bin/cloud-hammer && chmod 755 /usr/bin/cloud-hammer"
+    sudo bash -c "curl https://raw.githubusercontent.com/2mia/cloud-hammer/master/cloud-hammer > /usr/local/bin/cloud-hammer && chmod 755 /usr/local/bin/cloud-hammer"
 
 Install `jq`
 
-    sudo bash -c "curl http://stedolan.github.io/jq/download/linux64/jq > /usr/bin/jq && chmod 755 /usr/bin/jq"
+    sudo bash -c "curl http://stedolan.github.io/jq/download/linux64/jq > /usr/local/bin/jq && chmod 755 /usr/local/bin/jq"
 
 #### Quick how to
 
