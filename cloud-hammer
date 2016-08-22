@@ -40,6 +40,7 @@ function param_validate {
 function aws_get_json {
     set +e
     AWS_CF_JSON=`aws cloudformation get-template --stack-name $STACK_NAME 2>&1`
+    ( echo $AWS_CF_JSON | grep "ExpiredToken" &> /dev/null ) && echo "ERROR => credentials expired" && exit -1
     if ( echo $AWS_CF_JSON | grep "does not exist" &> /dev/null ); then
         #stack does not exist error
         echo stack $STACK_NAME does not exist
