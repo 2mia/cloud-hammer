@@ -78,7 +78,10 @@ function aws_update_stack {
     fi
     echo "[*] updating stack $STACK_NAME ...."
     [ -z "$LONG_PARAMS" ] || PARAMS="--parameters $LONG_PARAMS"
-    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE $PARAMS
+    CMD_FILE=/tmp/ch-cmd-$$
+    echo aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE $PARAMS > $CMD_FILE
+    bash $CMD_FILE
+    rm $CMD_FILE
 }
 
 function load_params_properties {
