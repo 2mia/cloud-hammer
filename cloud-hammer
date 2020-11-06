@@ -2,6 +2,8 @@
 
 set -e
 
+REGION=us-east-1
+
 while getopts ":f" opt; do
   case $opt in
     f)
@@ -39,7 +41,7 @@ function param_validate {
 
 function aws_get_json {
     set +e
-    AWS_CF_JSON=`aws cloudformation get-template --stack-name $STACK_NAME 2>&1`
+    AWS_CF_JSON=`aws cloudformation get-template --stack-name $STACK_NAME --region $REGION 2>&1`
     ( echo $AWS_CF_JSON | grep "ExpiredToken" &> /dev/null ) && echo "ERROR => credentials expired" && exit -1
     if ( echo $AWS_CF_JSON | grep "does not exist" &> /dev/null ); then
         #stack does not exist error
@@ -52,7 +54,11 @@ function aws_get_json {
 function aws_create_stack {
     echo "[*] creating stack $STACK_NAME ...."
     [ -z "$LONG_PARAMS" ] || PARAMS="--parameters $LONG_PARAMS"
-    aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE $PARAMS
+    CMD_FILE=/tmp/ch-cmd-$$
+    echo aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --region $REGION --template-body file://$CF_FILE $PARAMS  > $CMD_FILE
+    bash $CMD_FILE
+    rm $CMD_FILE
+
 }
 function aws_update_stack {
     echo "[*] calculating update - diff"
@@ -79,7 +85,7 @@ function aws_update_stack {
     echo "[*] updating stack $STACK_NAME ...."
     [ -z "$LONG_PARAMS" ] || PARAMS="--parameters $LONG_PARAMS"
     CMD_FILE=/tmp/ch-cmd-$$
-    echo aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --template-body file://$CF_FILE $PARAMS > $CMD_FILE
+    echo aws cloudformation $AWS_ACTION --stack-name $STACK_NAME --capabilities "CAPABILITY_IAM" --region $REGION --template-body file://$CF_FILE $PARAMS > $CMD_FILE
     bash $CMD_FILE
     rm $CMD_FILE
 }
